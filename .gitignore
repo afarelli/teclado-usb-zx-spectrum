@@ -1,0 +1,14 @@
+# Claude Code
+clauderun.sh
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Arduino IDE
+build/
+*.elf
+*.bin
+*.hex
+*.map
