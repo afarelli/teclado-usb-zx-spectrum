@@ -99,26 +99,26 @@ TK90X Col1 ───────┼────────────── Co
                 │           RASPBERRY PI PICO                     │
                 │                                                 │
  USB-A Fêmea    │                                                 │
- ┌──────────┐   │  GP0 (pino 1) ──[27Ω]──────────────────────── D+ (USB-A pino 3)
- │ VBUS(+5V)│◄──┼── VSYS (pino 39) ◄───────────────────────── +5V TK90X
- │ D-       │◄──┼── GP1 (pino 2) ──[27Ω]──────────────────── D- (USB-A pino 2)
- │ D+       │◄──┼── (ver acima)                               │
- │ GND      │◄──┼── GND ◄─────────────────────────────────── GND TK90X
+ ┌──────────┐   │  GP0 (pino 1) ───────────[27Ω]──────────────────── D+ (USB-A pino 3)
+ │ VBUS(+5V)│◄──┼── VSYS (pino 39) ◄──────────────────────────────── +5V TK90X
+ │ D-       │◄──┼── GP1 (pino 2) ──────────[27Ω]──────────────────── D- (USB-A pino 2)
+ │ D+       │◄──┼── (ver acima)                                   │
+ │ GND      │◄──┼── GND ◄─────────────────────────────────────────── GND TK90X
  └──────────┘   │                                                 │
-                │  GP2  (pino  4) ◄──[10kΩ]◄──── TK90X Row1      │
-                │  GP3  (pino  5) ◄──[10kΩ]◄──── TK90X Row2      │
-                │  GP4  (pino  6) ◄──[10kΩ]◄──── TK90X Row3      │
-                │  GP5  (pino  7) ◄──[10kΩ]◄──── TK90X Row4      │
-                │  GP6  (pino  9) ◄──[10kΩ]◄──── TK90X Row5      │
-                │  GP7  (pino 10) ◄──[10kΩ]◄──── TK90X Row6      │
-                │  GP8  (pino 11) ◄──[10kΩ]◄──── TK90X Row7      │
-                │  GP9  (pino 12) ◄──[10kΩ]◄──── TK90X Row8      │
+                │  GP2  (pino  4) ◄──[10kΩ]◄──── TK90X Row1       │
+                │  GP3  (pino  5) ◄──[10kΩ]◄──── TK90X Row2       │
+                │  GP4  (pino  6) ◄──[10kΩ]◄──── TK90X Row3       │
+                │  GP5  (pino  7) ◄──[10kΩ]◄──── TK90X Row4       │
+                │  GP6  (pino  9) ◄──[10kΩ]◄──── TK90X Row5       │
+                │  GP7  (pino 10) ◄──[10kΩ]◄──── TK90X Row6       │
+                │  GP8  (pino 11) ◄──[10kΩ]◄──── TK90X Row7       │
+                │  GP9  (pino 12) ◄──[10kΩ]◄──── TK90X Row8       │
                 │                                                 │
-                │  GP10 (pino 14) ──[1kΩ]──► Base Q1 (BC547)     │
-                │  GP11 (pino 15) ──[1kΩ]──► Base Q2 (BC547)     │
-                │  GP12 (pino 16) ──[1kΩ]──► Base Q3 (BC547)     │
-                │  GP13 (pino 17) ──[1kΩ]──► Base Q4 (BC547)     │
-                │  GP14 (pino 19) ──[1kΩ]──► Base Q5 (BC547)     │
+                │  GP10 (pino 14) ──[1kΩ]──► Base Q1 (BC547)      │
+                │  GP11 (pino 15) ──[1kΩ]──► Base Q2 (BC547)      │
+                │  GP12 (pino 16) ──[1kΩ]──► Base Q3 (BC547)      │
+                │  GP13 (pino 17) ──[1kΩ]──► Base Q4 (BC547)      │
+                │  GP14 (pino 19) ──[1kΩ]──► Base Q5 (BC547)      │
                 └─────────────────────────────────────────────────┘
 
   Transistores NPN (Q1–Q5), todos idênticos:

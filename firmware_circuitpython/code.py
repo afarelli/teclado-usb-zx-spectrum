@@ -218,30 +218,28 @@ def update_cols():
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Localiza o teclado USB e retorna (dispositivo, endereço_do_endpoint_IN)
+# Adaptado para CircuitPython 10.x: API simplificada, sem iteração de
+# configurações/interfaces. O endpoint 0x81 é o padrão para teclados HID.
 # ─────────────────────────────────────────────────────────────────────────────
 def find_keyboard():
     for dev in usb.core.find(find_all=True):
         try:
-            cfg = dev.get_active_configuration()
-            for intf in cfg:
-                # Classe HID = 0x03
-                if intf.bInterfaceClass != 0x03:
-                    continue
-                # Procura endpoint Interrupt IN (bit 7 = 1 → IN)
-                for ep in intf:
-                    if (ep.bmAttributes & 0x03) == 0x03 and (ep.bEndpointAddress & 0x80):
-                        # Solicita protocolo boot (relatório de 8 bytes fixos)
-                        try:
-                            dev.ctrl_transfer(
-                                0x21,                    # bmRequestType: host→device, class, interface
-                                0x0B,                    # bRequest: SET_PROTOCOL
-                                0,                       # wValue: 0 = boot protocol
-                                intf.bInterfaceNumber,   # wIndex: número da interface
-                                None                     # sem dados extras
-                            )
-                        except Exception:
-                            pass  # Alguns teclados ignoram este comando mas funcionam mesmo assim
-                        return dev, ep.bEndpointAddress
+            # Configura o dispositivo (necessário em alguns teclados)
+            try:
+                dev.set_configuration()
+            except Exception:
+                pass
+
+            # Solicita protocolo boot HID (relatório fixo de 8 bytes)
+            # Interface 0 é o padrão para teclados simples
+            try:
+                dev.ctrl_transfer(0x21, 0x0B, 0, 0, None)
+            except Exception:
+                pass  # Alguns teclados ignoram mas funcionam mesmo assim
+
+            # Endpoint 0x81 = Interrupt IN, interface 0 (padrão HID boot)
+            return dev, 0x81
+
         except Exception:
             continue
     return None, None
@@ -254,7 +252,7 @@ print("USB ZX Converter (CircuitPython) iniciando...")
 
 kbd = None
 ep_addr = None
-buf = bytearray(8)
+buf = bytearray(8)   # buffer pré-alocado — CP 10.x exige bytearray, não int
 
 while True:
 
@@ -264,7 +262,6 @@ while True:
         if kbd is not None:
             print("Teclado USB conectado.")
         else:
-            # Sem teclado: garante matriz limpa e aguarda um pouco
             for r in matrix:
                 for c in range(5):
                     r[c] = False
@@ -274,20 +271,24 @@ while True:
 
     # ── Lê relatório HID ────────────────────────────────────────────────────
     try:
-        count = kbd.read(ep_addr, buf, timeout=5)  # timeout de 5 ms
+        # CP 10.x: read() preenche o bytearray e retorna nº de bytes lidos
+        count = kbd.read(ep_addr, buf, timeout=5)
         if count and count >= 8:
             process_report(buf)
-    except Exception:
-        # Dispositivo desconectado ou erro de comunicação
-        kbd = None
-        ep_addr = None
-        buf = bytearray(8)
-        for r in matrix:
-            for c in range(5):
-                r[c] = False
-        print("Teclado USB desconectado. Aguardando...")
-        time.sleep(0.3)
-        continue
+    except Exception as e:
+        err = str(e).lower()
+        if "timeout" in err or "timed out" in err:
+            pass  # normal — nenhuma tecla pressionada no intervalo
+        else:
+            # Erro real: dispositivo desconectado ou endpoint errado
+            kbd = None
+            ep_addr = None
+            for r in matrix:
+                for c in range(5):
+                    r[c] = False
+            print("Teclado USB desconectado. Aguardando...")
+            time.sleep(0.3)
+            continue
 
     # ── Atualiza saídas da matriz ZX ────────────────────────────────────────
     update_cols()
