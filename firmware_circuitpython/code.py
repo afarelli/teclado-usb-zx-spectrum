@@ -16,7 +16,7 @@
 #   GP7  (pino 10) — Row6
 #   GP8  (pino 11) — Row7
 #   GP9  (pino 12) — Row8
-#   GP10 (pino 14) — Col1 (saída, via 1kΩ + BC547 → TK90X Col1)
+#   GP10 (pino 14) — Col1 (saída, via diodo 1N4148 → TK90X Col1)
 #   GP11 (pino 15) — Col2
 #   GP12 (pino 16) — Col3
 #   GP13 (pino 17) — Col4
@@ -46,12 +46,14 @@ for _pin in _ROW_GPIOS:
     _io.pull = None
     rows.append(_io)
 
-# Pinos Col: saídas, inicialmente False (transistor desligado = tecla solta)
+# Pinos Col: saídas, inicialmente True (diodo bloqueado = tecla solta)
+# Com diodo 1N4148: GPIO LOW = diodo conduz = Col ~0,7V = tecla PRESSIONADA
+#                   GPIO HIGH = diodo bloqueado = Col ~4V  = tecla SOLTA
 cols = []
 for _pin in _COL_GPIOS:
     _io = digitalio.DigitalInOut(_pin)
     _io.direction = digitalio.Direction.OUTPUT
-    _io.value = False
+    _io.value = True   # HIGH = tecla solta (diodo bloqueado)
     cols.append(_io)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -212,8 +214,9 @@ def update_cols():
             if not rows[ri].value and matrix[ri][ci]:
                 pressed = True
                 break
-        # HIGH no GPIO → transistor conduz → Col vai a GND no TK90X
-        cols[ci].value = pressed
+        # LOW no GPIO → diodo conduz → Col vai a ~0,7V no TK90X (tecla pressionada)
+        # HIGH no GPIO → diodo bloqueado → Col fica em ~4V (tecla solta)
+        cols[ci].value = not pressed
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -9,9 +9,8 @@
 |----------|----------------------------------|------------------------|-----|
 | U1       | Microcontrolador                 | Raspberry Pi Pico      | 1   |
 | R1–R8    | Resistor de proteção (Row)       | 10 kΩ 1/4 W            | 8   |
-| R9–R13   | Resistor de base (Col)           | 1 kΩ 1/4 W             | 5   |
-| R14–R15  | Resistor série USB (D+/D-)       | 27 Ω 1/4 W             | 2   |
-| Q1–Q5    | Transistor NPN                   | BC547 ou 2N3904        | 5   |
+| R9–R10   | Resistor série USB (D+/D-)       | 27 Ω 1/4 W             | 2   |
+| D1–D5    | Diodo de sinal                   | 1N4148                 | 5   |
 | J1       | Conector USB-A Fêmea             | 4 pinos, PTH            | 1   |
 | J2       | Barra de pinos fêmea             | 8 vias, 2,54 mm        | 1   |
 | J3       | Barra de pinos fêmea             | 5 vias, 2,54 mm        | 1   |
@@ -20,7 +19,7 @@
 
 ---
 
-## 2. Por que Resistores e Transistores?
+## 2. Por que Resistores e Diodos?
 
 A placa do TK90X opera com lógica **5 V** (circuito da época do Z80).
 O Raspberry Pi Pico opera com lógica **3,3 V** e seus pinos GPIO **não suportam 5 V diretamente**.
@@ -28,20 +27,22 @@ O Raspberry Pi Pico opera com lógica **3,3 V** e seus pinos GPIO **não suporta
 | Situação              | Problema                          | Solução adotada               |
 |-----------------------|-----------------------------------|-------------------------------|
 | Row (TK90X → Pico)    | Sinal de 5 V no GPIO de 3,3 V     | Resistor série 10 kΩ (limitação de corrente via diodo de clamp interno) |
-| Col (Pico → TK90X)    | GPIO de 3,3 V precisa drenar 5 V  | Transistor NPN em coletor aberto |
+| Col (Pico → TK90X)    | GPIO de 3,3 V não pode ver 5 V    | Diodo 1N4148 em série (bloqueia a tensão alta no lado do ZX) |
 
-### Funcionamento do transistor (saída Col)
+### Funcionamento do diodo (saída Col)
 ```
                  +5V (trilho TK90X)
                   │
                   │  [10 kΩ pull-up já existente na placa ZX]
                   │
-TK90X Col1 ───────┼────────────── Coletor (Q1)
-                               Base (Q1) ──[1 kΩ]── GP10 (Pico)
-                               Emissor (Q1) ──────── GND
+TK90X Col1 ───────┼──── Anodo ►| Catodo ──── GP10 (Pico)
+                       (1N4148)
 
-  GP10 = HIGH (3,3V)  →  Q1 conduz  →  Col1 vai a GND  →  tecla PRESSIONADA
-  GP10 = LOW  (0V)    →  Q1 bloqueado →  Col1 fica em +5V →  tecla SOLTA
+  GP10 = LOW  (0V)    →  diodo conduz  →  Col1 vai a ~0,7V  →  tecla PRESSIONADA
+  GP10 = HIGH (3,3V)  →  diodo bloqueado → Col1 fica em ~4V  →  tecla SOLTA
+
+  O pino GP10 permanece sempre em 3,3V ou 0V — nunca vê os 5V do ZX.
+  Os ~4V quando solto ficam do lado do anodo (ZX), não chegam ao Pico.
 ```
 
 ---
@@ -80,15 +81,15 @@ TK90X Col1 ───────┼────────────── Co
 | J2 pino 7      | Row7  | 10 kΩ    | GP8       | 11          |
 | J2 pino 8      | Row8  | 10 kΩ    | GP9       | 12          |
 
-### 3.4 Saídas Col (Pico → TK90X, via transistor NPN)
+### 3.4 Saídas Col (Pico → TK90X, via diodo 1N4148)
 
-| Pico GPIO | Pino Físico | Resistor Base | Transistor | Coletor → TK90X |
-|-----------|-------------|---------------|------------|-----------------|
-| GP10      | 14          | 1 kΩ          | Q1 (BC547) | J3 pino 1 (Col1)|
-| GP11      | 15          | 1 kΩ          | Q2 (BC547) | J3 pino 2 (Col2)|
-| GP12      | 16          | 1 kΩ          | Q3 (BC547) | J3 pino 3 (Col3)|
-| GP13      | 17          | 1 kΩ          | Q4 (BC547) | J3 pino 4 (Col4)|
-| GP14      | 19          | 1 kΩ          | Q5 (BC547) | J3 pino 5 (Col5)|
+| Pico GPIO | Pino Físico | Catodo (Pico) | Diodo  | Anodo → TK90X   |
+|-----------|-------------|---------------|--------|-----------------|
+| GP10      | 14          | GP10          | D1     | J3 pino 1 (Col1)|
+| GP11      | 15          | GP11          | D2     | J3 pino 2 (Col2)|
+| GP12      | 16          | GP12          | D3     | J3 pino 3 (Col3)|
+| GP13      | 17          | GP13          | D4     | J3 pino 4 (Col4)|
+| GP14      | 19          | GP14          | D5     | J3 pino 5 (Col5)|
 
 ---
 
@@ -114,18 +115,20 @@ TK90X Col1 ───────┼────────────── Co
                 │  GP8  (pino 11) ◄──[10kΩ]◄──── TK90X Row7       │
                 │  GP9  (pino 12) ◄──[10kΩ]◄──── TK90X Row8       │
                 │                                                 │
-                │  GP10 (pino 14) ──[1kΩ]──► Base Q1 (BC547)      │
-                │  GP11 (pino 15) ──[1kΩ]──► Base Q2 (BC547)      │
-                │  GP12 (pino 16) ──[1kΩ]──► Base Q3 (BC547)      │
-                │  GP13 (pino 17) ──[1kΩ]──► Base Q4 (BC547)      │
-                │  GP14 (pino 19) ──[1kΩ]──► Base Q5 (BC547)      │
+                │  GP10 (pino 14) ──── Catodo ►| Anodo ──── TK90X Col1 │
+                │  GP11 (pino 15) ──── Catodo ►| Anodo ──── TK90X Col2 │
+                │  GP12 (pino 16) ──── Catodo ►| Anodo ──── TK90X Col3 │
+                │  GP13 (pino 17) ──── Catodo ►| Anodo ──── TK90X Col4 │
+                │  GP14 (pino 19) ──── Catodo ►| Anodo ──── TK90X Col5 │
                 └─────────────────────────────────────────────────┘
 
-  Transistores NPN (Q1–Q5), todos idênticos:
+  Diodos 1N4148 (D1–D5), todos idênticos:
 
-    TK90X Colx ──── Coletor (BC547)
-                    Base ──[1kΩ]── GPxx (Pico)
-                    Emissor ─────── GND
+    GPxx (Pico) ──── Catodo ►| Anodo ──── TK90X Colx
+
+  Identificando a polaridade do 1N4148:
+    A faixa/listra cinza ou preta na extremidade do diodo = CATODO (lado do Pico)
+    O lado sem faixa = ANODO (lado do TK90X)
 ```
 
 ---
@@ -150,7 +153,7 @@ Col5(GP14):  5     T     G     6     Y     V     H     B
 ## 6. Notas de Montagem
 
 1. **GND comum**: O GND do Pico, do TK90X e do teclado USB devem estar todos ligados ao mesmo ponto de referência.
-2. **Sequência de montagem recomendada**: solde os resistores e transistores primeiro, depois conecte os fios Dupont ao Pico, por último ligue ao TK90X.
+2. **Sequência de montagem recomendada**: solde os resistores e diodos primeiro, depois conecte os fios Dupont ao Pico, por último ligue ao TK90X.
 3. **Não conecte o teclado USB enquanto a montagem não estiver completa**: evite curto-circuito na alimentação.
 4. **Os pull-ups de 10 kΩ para as linhas Col** já existem na placa do TK90X — não adicione mais.
 5. **Consumo estimado**: Pico ≈ 25 mA + teclado USB ≈ 100 mA = ~130 mA total. A fonte original do TK90X suporta isso tranquilamente.
